@@ -1,7 +1,9 @@
 import math
 import numpy as np
 from random import shuffle, choice, randrange
+import csv
 import GA
+import matplotlib.pyplot as plt
 
 #GA CONSTANTS
 TOURNAMENT = 'TOURNAMENT'
@@ -130,91 +132,78 @@ def findNearestNode(node, nodes):
     return bestDistance, nearestNode
 
 
-# ---------- GENETIC ALGORITHM METHODS ---------
+def writeToCsv(fileName, results):
+    with open('../results/' + fileName + '.csv', 'w+', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerows(results)
 
-def initializePopulation(popSize, nodes):
-    pop = []
-    for i in range(popSize):
-        individual = nodes[:]
-        shuffle(individual)
-        pop.append(individual)
-    return pop
+def plotResults(title, results, rndResult= None, forceResult=None):
+    bestD, avgD, worstD, std, rnd, frc = [], [], [], [], [], []
+    for i in range(len(results)):
+        bestD.append(results[i][0])
+        avgD.append(results[i][1])
+        worstD.append(results[i][2])
+        std.append(results[i][3])
 
-def tournamentSelect(nSize, pop):
-    pop = pop[:]
-    newPop = []
-    popSize = len(pop)
-    popFitnes = countPopulationFitnes(pop)
-    for i in range(popSize):
-        winner = 0
-        currBest = 0
-        for j in range(nSize):
-            indiv = randrange(popSize)
-            if popFitnes[indiv] >= currBest:
-                winner = indiv
-                currBest = popFitnes[indiv]
-        newPop.append(pop[winner])
-    return newPop
+        if rndResult != None and forceResult != None:
+            rnd.append(rndResult)
+            frc.append(forceResult)
 
-def rouletteSelect(pop):
-    pop = pop[:]
-    newPop = []
-    popSize = len(pop)
-    popFitnes = countPopulationFitnes(pop)
+    T = [i for i in range(0, GA.GEN)]
+    plt.figure().suptitle(title, fontsize=10)
+    plt.plot(T, bestD, label='best distance')
+    plt.plot(T, avgD, label='average distance')
+    plt.plot(T, worstD, label='worst distance')
+    plt.plot(T, std, label='std')
 
-    #generating probability distribution
-    sum = np.sum(popFitnes)
-    probDistr = [popFitnes[i] / sum for i in range(popSize)]
-    inxArr = [i for i in range(popSize)]
+    if rndResult != None and forceResult != None:
+        plt.plot(T, rnd, label='random algorithm best result')
+        plt.plot(T, frc, label='force algorithm best result')
 
-    for i in range(popSize):
-        # random choice based on given probability distribution
-        shot = np.random.choice(a=inxArr, p=probDistr)
-        newPop.append(pop[shot])
-    return newPop
+    plt.legend()
+    plt.show()
+    plt.clf()
 
-
-def eliteSelect(pop, m):
-    """
-
-    :param pop:
-    :param m: <0; 100> percent
-    :return:
-    """
-    pop = pop[:]
-    newPop = []
-    popSize = len(pop)
-    popFitnes = countPopulationFitnes(pop)
-    n = int(popSize * m / 100)
-    for i in range(popSize):
-        pop[i] = (pop[i], popFitnes[i])
-    pop.sort(key=lambda tup: tup[1], reverse=True)
-    for i in range(n):
-        newPop.append(pop[i][0])
-    return newPop
-
-
-path = parseFile("../TSP/berlin11_modified.tsp")
-#path = parseFile("../TSP/berlin52.tsp")
-
-pop = GA.Population(10, path)
+def setGensNumber(level):
+    if level == 'EASY':
+        GA.GEN = 1000
+    elif level == 'MID':
+        GA.GEN = 5000
+    elif level == 'MID+':
+        GA.GEN = 7000
+    else:
+        GA.GEN = 10000
 
 
 
-popp = pop.pop
-newPop = pop.rouletteSelect()
-nPop = pop.eliteSelect(20)
+if __name__ == "__main__":
+    nodes = {
+        'berlin11_modified': (parseFile("../TSP/berlin11_modified.tsp"), 'EASY'),
+        'berlin52' : (parseFile("../TSP/berlin52.tsp"), 'EASY'),
+        'kroA100': (parseFile("../TSP/kroA100.tsp"), 'MID'),
+        'kroA150': (parseFile("../TSP/kroA150.tsp"), 'MID'),
+        'kroA200' : (parseFile("../TSP/kroA200.tsp"), 'MID'),
+        'fl417': (parseFile("../TSP/fl417.tsp"), 'MID+'),
+        'gr666': (parseFile("../TSP/gr666.tsp"), 'MID+'),
+        'nrw1379': (parseFile("../TSP/nrw1379.tsp"), 'HARD'),
+        'pr2392': (parseFile("../TSP/pr2392.tsp"), 'HARD')
+    }
 
-print('----------------')
-for p in popp:
-    print(p.path)
-print('----------------')
-for p in newPop:
-    print(p.path)
+    for k, v in nodes.items():
+        ga = GA.GA(v[0])
+        setGensNumber(v[1])
+        bestRandomAlgResult = TSPrandomAlgorithm(v[0], GA.GEN*GA.POP_SIZE)
+        bestForceAlgResult = TSPforceAlgorithm(v[0], GA.GEN)
+        stats = ga.startGA(crossMethod=GA.PMX, selectMethod='tournament', mutMethod='INV')
+        plotResults(k, stats, bestRandomAlgResult[0], bestForceAlgResult[0])
+        writeToCsv(k, stats)
+        writeToCsv(k+'classic', [[bestRandomAlgResult[0], bestForceAlgResult[0]]])
 
-print('----------------')
-for p in nPop:
-    print(p.path)
+
+
+
+
+
 
 
 
