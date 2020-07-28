@@ -194,17 +194,9 @@ if __name__ == "__main__":
         setGensNumber(v[1])
         bestRandomAlgResult = TSPrandomAlgorithm(v[0], GA.GEN*GA.POP_SIZE)
         bestForceAlgResult = TSPforceAlgorithm(v[0], GA.GEN)
-        stats = ga.startGA(crossMethod=GA.PMX, selectMethod='tournament', mutMethod='INV')
+        stats = ga.startGA(crossMethod=GA.OX, selectMethod='tournament', mutMethod='INV')
         plotResults(k, stats, bestRandomAlgResult[0], bestForceAlgResult[0])
         writeToCsv(k, stats)
         writeToCsv(k+'classic', [[bestRandomAlgResult[0], bestForceAlgResult[0]]])
-
-
-
-
-
-
-
-
 
 

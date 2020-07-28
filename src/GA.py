@@ -7,7 +7,7 @@ from copy import copy, deepcopy
 POP_SIZE = 100
 GEN = 1000
 Px = 0.75
-Pm = 0.15
+Pm = 0.10
 TOUR = 6
 
 # euclidean distance p/q(nodeNumber, X, Y)
